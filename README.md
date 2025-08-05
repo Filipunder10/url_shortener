@@ -17,8 +17,10 @@ dotnet ef database update
 ```
 
 ## Running
-Finally, build and run the application with:
+Build and run the application with:
 ```bash
 dotnet build
 dotnet run
 ```
+
+Finally, access the web app at https://localhost:7034
