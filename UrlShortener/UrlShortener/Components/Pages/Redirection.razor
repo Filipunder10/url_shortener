@@ -1,0 +1,51 @@
+@using UrlShortener.Data
+@using UrlShortener.Models
+
+@page "/redirect/{shortCode}"
+
+@inject UrlShortenerContext dbContext
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor httpContextAccessor
+
+@code {
+    [Parameter] public string shortCode { get; set; }
+    public string clientIp;
+
+    protected override void OnInitialized()
+    {
+        var record = dbContext.ShortenedUrls.FirstOrDefault(x => x.ShortCode == shortCode);
+
+        if (record != null)
+        {
+            RecordVisit();
+            
+            Navigation.NavigateTo(record.OriginalUrl, true);
+        }
+        else
+        {
+            Navigation.NavigateTo("error404", true);
+        }
+    }
+
+    protected async Task RecordVisit()
+    {
+        var context = httpContextAccessor.HttpContext;
+        if (context != null)
+        {
+            var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                     ?? context.Connection.RemoteIpAddress?.ToString();
+                
+            clientIp = ip;
+        }
+            
+        var visitRecord = new Visit
+        {
+            ShortCode = shortCode,
+            ClientIp = clientIp,
+            VisitedAt = DateTime.UtcNow
+        };
+
+        dbContext.Visits.Add(visitRecord);
+        dbContext.SaveChanges();
+    }
+}
